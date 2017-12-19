@@ -1,0 +1,1630 @@
+算法总结：
+魏萱给生成相关系数图。肯德尔相关系数 
+coeff = corr(x , y , 'type' , 'Kendall'); 
+
+000.邹强给程序，做叶片酶值分布图
+A=zeros(300,300);
+for i= 1:300
+    for j=1:300
+        for k=1:22121
+            if ((i==x(k))&&(j==y(k)))
+                A(j,i)=z(k);
+            end;
+        end
+    end
+end
+image(A)
+colorbar
+colormap(hot(256));
+   
+0、dlmwrite('xiangansm.txt',v);%把V矩阵的数据导出至xiangansm.txt中
+1、ANN
+data=load('D:\BPpearsample.txt');
+X=data([1:151],[1:70 81:150 161:230]); %750光谱维度，20是样本数，750*20建模自变量,data为matlab读txt文件
+ Y=data(152,[1:70 81:150 161:230]); %第751个数据是浓度，20是样本数，1*20建模应变量
+ 
+Xt=data([1:151],[71:80 151:160 231:240]); %750光谱维度，19是样本数，750*19预测自变量
+Yt=data(152,[71:80 151:160 231:240]);%第751个数据是浓度，19是样本数，1*19预测应变量
+     P =X;
+     T =Y;
+      net = newrbe(P,T); %基于建模自变量和因变量建立网络
+      P2 = Xt;
+      Y = sim(net,P2)%基于网络预测未知样本
+      scatter(Y,Yt)%画出预测散点图
+        r=corr(Yt',Y')
+
+2、BP
+data=load('D:\BPpearsample.txt');
+X=data([1:151],[1:70 81:150 161:230]); %750光谱维度，20是样本数，750*20建模自变量,data为matlab读txt文件
+ Y=data(152,[1:70 81:150 161:230]); %第751个数据是浓度，20是样本数，1*20建模应变量
+ 
+Xt=data([1:151],[71:80 151:160 231:240]); %750光谱维度，19是样本数，750*19预测自变量
+Yt=data(152,[71:80 151:160 231:240]);%第751个数据是浓度，19是样本数，1*19预测应变量
+      P = X;
+      T = Y;
+      net = newff(P,T,10);
+      Y = sim(net,Xt);
+   %   r=corr(Yt',Y')
+      net.trainParam.epochs =100;
+      net = train(net,P,T);
+      Y = sim(net,Xt);
+ %     scatter(Yt',Y')
+南丰蜜桔结果
+
+
+ X=data(50:350,1:126); %750光谱维度，20是样本数，750*20建模自变量,data为matlab读txt文件
+ Y=data(513,1:126); %第751个数据是浓度，20是样本数，1*20建模应变量
+Xt=data(50:350,127:168); %750光谱维度，19是样本数，750*19预测自变量
+Yt=data(513,127:168);%第751个数据是浓度，19是样本数，1*19预测应变量
+      P = X;
+      T = Y;
+     net = newff(P,T,15);
+      net.trainParam.Fcn='traingd';
+      net.trainParam.goal=1e-4;
+      net.trainParam.epochs =100;
+      net=train(net,P,T); 
+      Y0 = sim(net,X);
+      r0=corr(Y0',Y')
+     scatter(Y0',Y')
+        Y1 = sim(net,Xt);
+      r1=corr(Yt',Y1')
+     scatter(Yt',Y1')
+3、CCRBF
+data=load('D:\BPpearsample.txt');
+X=data([1:151],[1:70 81:150 161:230]); %750光谱维度，20是样本数，750*20建模自变量,data为matlab读txt文件
+ Y=data(152,[1:70 81:150 161:230]); %第751个数据是浓度，20是样本数，1*20建模应变量
+ 
+Xt=data([1:151],[71:80 151:160 231:240]); %750光谱维度，19是样本数，750*19预测自变量
+Yt=data(152,[71:80 151:160 231:240]);%第751个数据是浓度，19是样本数，1*19预测应变量
+SPREAD=4;%叠代次数，先设为1
+net=newrbe(X,Y,SPREAD);%基于建模自变量和因变量建立网络
+y=sim(net,Xt);%基于网络预测未知样本
+plot(1:length(Yt),Yt,'r+:',1:length(y),y,'bo:');
+%y=sim(net,P);
+%plot(1:length(T),T,'r+:',1:length(y),y,'bo:');
+%corr(T',y')
+title('+为真实值，o为预测值');
+r=corr(Yt',y')
+e=Yt-y;
+%perf = mse(e)
+
+n=size(Yt,2);
+TSS=sum((Yt-mean(Yt)).^2);
+RSS=sum((y-Yt).^2);
+R2P=1-RSS/TSS;
+RMSEP=sqrt(sum((y-Yt).^2)/n); 
+
+%寻找最优SPREAD
+%M=zero(1,63);
+%E=zero(1,63);
+for i=1:100;
+    %M=zero(1,63);
+    %E=zero(1,63);
+    net=newrbe(X,Y,i);
+M=sim(net,Xt);
+E=Yt-M;
+a=E;
+Z(i)=mse(a);%Mean squared error performance function，取最小值给SPREAD
+end;
+4、LS-SVM
+%请参阅LS-SVM工具箱使用方法，先学习一下,分类
+data=load('D:\BPpearsample.txt');
+X=data([1:151],[1:70 81:150 161:230]); %750光谱维度，20是样本数，750*20建模自变量,data为matlab读txt文件
+ Y=data(152,[1:70 81:150 161:230]); %第751个数据是浓度，20是样本数，1*20建模应变量
+ Xt=data([1:151],[71:80 151:160 231:240]); %750光谱维度，19是样本数，750*19预测自变量
+Yt=data(152,[71:80 151:160 231:240]);%第751个数据是浓度，19是样本数，1*19预测应变量
+X=X';
+Y=Y';
+Xt=Xt';
+Yt=Yt'
+igam=0.001
+isig2=0.001
+[gam,sig2]=tunelssvm({X,Y,'f',igam,isig2,'RBF_kernel'},...
+[0.001 0.001;10000 10000],'gridsearch',{},'leaveoneout_lssvm')
+type='function approximation';
+kernel='RBF_kernel';
+model=initlssvm(X,Y,type,gam,sig2,kernel);
+model=trainlssvm(model);
+Yt=simlssvm(model,Xt);
+5、求平均光谱
+%数据集结构 每一列代表一个光谱曲线，即列代表样本；每行代表该波长，即行代表波长点
+%将预处理的光谱集合设定 变量名为 m，得到的平均光谱变量名为 ave
+%100条光谱 每25条求平均得到一条光谱，总共得到4条平均光谱 程序如下
+m=Xt;
+for i=1:3 %4代表总共得到多少条平均光谱
+k=(i-1)*20;x=m(:,k+1); %25代表每多少条光谱求平均
+for j=1:19 %24代表循环的间隔比25小1
+x=x+m(:,k+j+1);
+end
+x=x/20; %25代表每25条光谱求平均
+ave(:,i)=x;
+end
+
+ave1=[];
+for i=1:40;
+ave1(:,i)=ave(:,2*i-1);
+end 
+
+ave2=[];
+for i=1:40;
+ave2(:,i)=ave(:,2*i);
+end
+
+
+
+6、掩模相关
+a=imread('a.bmp');
+a=a(:,:,1);
+a=im2bw(a);
+a=uint8(a);
+mask=imfill(a,'holes');
+b=imread('b.bmp');
+b=b(:,:,1);
+b=im2uint8(b);
+result=mask.*b;
+figure,imshow(result);
+
+
+掩模的思路：
+1、数值范围是要保留下来的值，其余将全部置0，即全黑；
+2、选择一波段，作为建立掩模，方法为a、查看此波段背景光谱值，比如800波段的光谱数值为1000，则数值范围最小值至少应为1500，最好1600~1800；b、查看对象在此波段的值，比如800波段的光谱数值为3500，则数值范围最小值至少应为3500，最好3800，不能超过4000；
+3、建好掩模后，双击掩模，得到原始掩模模板，导出图像如a.bmp,此图像为黑板二值图，另导出原对象RGB彩色图，如b.bmp,在matlab中运行上述程序，即可得到去除背景的图像，为下一步图像处理打好基础。
+4、第4步和第3步互相独立步骤：对原高光谱图像全波段图像应用掩模或部分波段应用掩模方法：Basic Tools--->Masking---->Apply mask--->选择最原始高光谱图像文件---->Select Mask Band---->选择此前创建好的掩模-----ok--->ok
+
+以下部分代码对分割缺陷有用：
+f=imread('a.bmp');r=f(:,:,1);figure,imshow(r);
+improfile
+bw=im2bw(f,25/255);figure,imshow(bw);
+bw=im2bw(f,150/255);figure,imshow(bw);
+p=imfill(bw,'holes');figure,imshow(p);
+se=strel('disk',4);g=imopen(p,se);figure,imshow(g);
+se=strel('disk',10);g=imopen(p,se);figure,imshow(g);
+
+
+
+
+
+7、从ENVI获取光谱数据程序
+z=zeros(180,512);   %180为样本数目，512为波段数目
+for i=1:180;        %180为样本数目
+[a1,a2,a3,a4,a5,a6]=textread([num2str(i),'.txt'],'%s%s%s%s%s%s','headerlines',4);  %[]中为要提取出mean的txt 
+for k=1:512;       %512为波段数目
+fk=deal(a5{k});
+[x,status]=str2num(fk);
+z(i,k)=x/4095;
+end
+end
+
+
+以上为李晓丽写的程序，由于不能同时处理超过24个文件数据，以下为章海亮改动程序，可以顺序程序。
+z=zeros(24,512);   %180为样本数目，512为波段数目
+for i=25:48;        %180为样本数目
+[a1,a2,a3,a4,a5,a6]=textread([num2str(i),'.txt'],'%s%s%s%s%s%s','headerlines',4);  %[]中为要提取出mean的txt 
+for k=1:512;       %512为波段数目
+fk=deal(a5{k});
+[x,status]=str2num(fk);
+z(i-24,k)=x/4095;
+end
+end
+8、利用MNF去除噪声
+正向MNF，spatial subset为full scene，spectral subset 为band1---band512,或者band50---band460，噪声文件为noise.sta,正向MNF文件可取名为mnf.daw,正向MNF统计文件可取名为mnf.sta,正向变换的思路相当于做主成分分析，得到前10个主成分即前十个左右的波段用于消除噪声;反向MNF，选正向MNF文件前几十个左右band图像，选正向MNF的mnf.sta文件，反向MNF文件命名为imnf.daw。变回原始数据空间，噪音基本消除，图像更清晰，利于纹理提取和光谱分析。消除后可进行关联分析，tools--Link-Link display.
+
+9、小波变换
+张初：
+for i=1:169;
+subplot(2,1,1);
+plot(Matrix(i,1:2203)); 
+title('原始信号');
+[c,l]=wavedec(Matrix(i,1:2203),5,'db5'); 
+ca(i,:)=appcoef(c,l,'db5',5);
+subplot(2,1,2);
+plot(ca(i,:)); 
+end;
+
+减少维度后的光谱在ca变量中！！
+
+刘飞：
+for i=1:200;
+subplot(2,1,1);
+plot(Matrix(i,1:256)); 
+title('原始信号');
+[c,l]=wavedec(Matrix(i,1:256),5,'db5'); 
+ca(i,:)=appcoef(c,l,'db5',5);
+subplot(2,1,2);
+plot(ca(i,:)); 
+end;
+9-1、另一小波程序
+[c,l]=wavedec(s,3,'db1');
+9-2、小波变换：用于图像处理小波变换
+
+clear;
+
+[FileName,FilePath]=uigetfile('*.tif;*.jpg','Image Data Loading...');
+if isequal(FileName,0) | isequal(FilePath,0)
+       disp('User pressed cancel')
+else       
+        file=[FilePath,FileName];
+        [pathstr,name,ext,versn] = fileparts(file);
+        name=[name,'seg.tif'];
+        RGB=imread(file);                                          
+
+ name1=['registered',name];
+name2=['QuBeiJing',name];
+RGB5=imread('a.tif')
+
+
+%求纹理特征：角二阶矩 f1、相关度 f2、熵 f3、惯性矩I、同质性H
+% tu=RGB5;
+% IN=rgb2gray(tu);              %灰度化
+
+% 先计算红通道角二阶矩 Rf1、相关度 Rf2、熵 Rf3
+IN=RGB5(:,:,1);
+g=256;
+[R,C]=size(IN);
+p1=zeros(g);             %计算共生矩阵 
+for M=1:R
+    for N=1:(C-1)
+        p1(IN(M,N)+1,IN(M,N+1)+1)= p1(IN(M,N)+1,IN(M,N+1)+1)+1;
+        p1(IN(M,N+1)+1,IN(M,N)+1)= p1(IN(M,N+1)+1,IN(M,N)+1)+1;
+    end
+end
+p2=double(p1)/(M*N);             %归一化
+
+% %计算角二阶矩 Rf1
+% f1=p2.^2;
+% Rf1=sum(f1(:))
+% 
+% % 计算相关度 Rf2
+% colour=0:(g-1);
+% m1=sum(p2)*colour(:);
+% m2=m1;
+% pp=sum(p2);
+% v1=((colour-m1).^2)*pp(:);
+%  v2=v1;
+% [m,n]=meshgrid(colour,colour);
+% pp=m.*n.*p2;
+% Rf2=(sum(pp(:))-m1*m2)/(v1+eps)*(v2+eps)
+
+%计算熵 Rf3
+pp=(p2.*log2(p2+eps));
+Rf3=-sum(pp(:)) 
+
+
+
+% 计算绿通道角二阶矩 Gf1、相关度 Gf2、熵 Gf3
+IN=RGB5(:,:,3);
+g=256;
+[R,C]=size(IN);
+p1=zeros(g);             %计算共生矩阵 
+for M=1:R
+    for N=1:(C-1)
+        p1(IN(M,N)+1,IN(M,N+1)+1)= p1(IN(M,N)+1,IN(M,N+1)+1)+1;
+        p1(IN(M,N+1)+1,IN(M,N)+1)= p1(IN(M,N+1)+1,IN(M,N)+1)+1;
+    end
+end
+p2=double(p1)/(M*N);             %归一化
+
+% %计算角二阶矩 Rf1
+% f1=p2.^2;
+%  Gf1=sum(f1(:))
+% 
+% % 计算相关度 Rf2
+% colour=0:(g-1);
+% m1=sum(p2)*colour(:);
+% m2=m1;
+% pp=sum(p2);
+% v1=((colour-m1).^2)*pp(:);
+%  v2=v1;
+% [m,n]=meshgrid(colour,colour);
+% pp=m.*n.*p2;
+%  Gf2=(sum(pp(:))-m1*m2)/(v1+eps)*(v2+eps)
+
+%计算熵 Rf3
+pp=(p2.*log2(p2+eps));
+ Gf3=-sum(pp(:)) 
+
+ 
+ 
+ % 计算近红外通道角二阶矩 Nirf1、相关度 Nirf2、熵 Nirf3
+IN=RGB5(:,:,2);
+g=256;
+[R,C]=size(IN);
+p1=zeros(g);             %计算共生矩阵 
+for M=1:R
+    for N=1:(C-1)
+        p1(IN(M,N)+1,IN(M,N+1)+1)= p1(IN(M,N)+1,IN(M,N+1)+1)+1;
+        p1(IN(M,N+1)+1,IN(M,N)+1)= p1(IN(M,N+1)+1,IN(M,N)+1)+1;
+    end
+end
+p2=double(p1)/(M*N);             %归一化
+
+% %计算角二阶矩 Rf1
+% f1=p2.^2;
+%  Nirf1=sum(f1(:))
+% 
+% % 计算相关度 Rf2
+% colour=0:(g-1);
+% m1=sum(p2)*colour(:);
+% m2=m1;
+% pp=sum(p2);
+% v1=((colour-m1).^2)*pp(:);
+%  v2=v1;
+% [m,n]=meshgrid(colour,colour);
+% pp=m.*n.*p2;
+%  Nirf2=(sum(pp(:))-m1*m2)/(v1+eps)*(v2+eps)
+
+%计算熵 Rf3
+pp=(p2.*log2(p2+eps));
+ Nirf3=-sum(pp(:)) 
+
+ 
+ 
+ 
+ 
+ %计算红、绿、近红外角二阶矩f1、惯性矩I、同质性H、相关度f2
+%  首先红通道惯性矩RI、同质性RH
+
+GLCM2 = graycomatrix(RGB5(:,:,1));
+stats = graycoprops(GLCM2,{'all'})
+RI=stats.Contrast
+RH=stats.Homogeneity
+Rf1=stats.Energy
+Rf2=stats.Correlation
+
+%  近红外通道惯性矩NirI、同质性NirH
+
+GLCM2 = graycomatrix(RGB5(:,:,2));
+stats = graycoprops(GLCM2,{'all'})
+NirI=stats.Contrast
+NirH=stats.Homogeneity
+Nirf1=stats.Energy
+Nirf2=stats.Correlation
+
+%  绿通道惯性矩GI、同质性GH
+GLCM2 = graycomatrix(RGB5(:,:,3));
+stats = graycoprops(GLCM2,{'all'})
+GI=stats.Contrast
+GH=stats.Homogeneity
+Gf1=stats.Energy
+Gf2=stats.Correlation
+
+
+
+
+JieGuo12=[Rf1,Rf2,Rf3,Gf1,Gf2,Gf3,Nirf1,Nirf2,Nirf3,RI,GI,NirI,RH,GH,NirH];
+xlswrite('jieguo.xlsx', JieGuo12, 'sheet1', 'A1')
+%A1是第一行，A2则为输出到第二行，结果是输出的文件的名字
+end
+10、PLS算法
+偏最小二乘回归MATLAB程序代码
+单因变量
+function y=pls(pz)
+[row,col]=size(pz);
+aver=mean(pz);
+stdcov=std(pz); %求均值和标准差
+rr=corrcoef(pz);   %求相关系数矩阵
+%data=zscore(pz); %数据标准化
+stdarr = ( pz - aver(ones(row,1),:) )./ stdcov( ones(row,1),:);  % 标准化数据结果与zscore()一致
+x0=pz(:,1:col-1);y0=pz(:,end); %提取原始的自变量、因变量数据
+e0=stdarr(:,1:col-1);f0=stdarr(:,end);  %提取标准化后的自变量、因变量数据
+num=size(e0,1);%求样本点的个数
+temp=eye(col-1);%对角阵
+for i=1:col-1
+%以下计算 w，w*和 t 的得分向量，
+    w(:,i)= ( e0'* f0 )/ norm( e0'*f0 );
+    t(:,i)=e0*w(:,i)      %计算成分 ti 的得分
+    alpha(:,i)=e0'*t(:,i)/(t(:,i)'*t(:,i))  %计算 alpha_i ,其中(t(:,i)'*t(:,i))等价于norm(t(:,i))^2
+    e=e0-t(:,i)*alpha(:,i)'    %计算残差矩阵
+    e0=e;
+     %计算w*矩阵
+       if i==1
+           w_star(:,i)=w(:,i);
+       else
+          for j=1:i-1
+              temp=temp*(eye(col-1)-w(:,j)*alpha(:,j)');
+          end
+          w_star(:,i)=temp*w(:,i);
+      end     
+%以下计算 ss(i)的值
+    beta=[t(:,1:i),ones(num,1)]\f0  %求回归方程的系数
+    beta(end,:)=[];   %删除回归分析的常数项
+    cancha=f0-t(:,1:i)*beta;    %求残差矩阵
+    ss(i)=sum(sum(cancha.^2));  %求误差平方和
+%以下计算 press(i)
+    for j=1:num
+        t1=t(:,1:i);f1=f0;
+        she_t=t1(j,:);she_f=f1(j,:);  %把舍去的第 j个样本点保存起来
+        t1(j,:)=[];f1(j,:)=[];        %删除第j个观测值
+        beta1=[t1,ones(num-1,1)]\f1;  %求回归分析的系数
+        beta1(end,:)=[];           %删除回归分析的常数项
+        cancha=she_f-she_t*beta1;  %求残差向量
+        press_i(j)=sum(cancha.^2); 
+    end
+    press(i)=sum(press_i)
+    if i>1
+        Q_h2(i)=1-press(i)/ss(i-1)
+    else
+        Q_h2(1)=1
+    end
+    if Q_h2(i)<0.0985
+        fprintf('提出的成分个数 r=%d',i);
+        r=i;
+        break
+     end
+end
+beta_z=[t,ones(num,1)]\f0;   %求标准化Y关于主成分得分向量t的回归系数
+beta_z(end,:)=[];      %删除常数项
+xishu=w_star*beta_z;   %求标准化Y关于X的回归系数， 且是针对标准数据的回归系数，每一列是一个回归方程
+mu_x=aver(1:col-1);mu_y=aver(end);
+sig_x=stdcov(1:col-1);sig_y=stdcov(end);
+ch0=mu_y-mu_x./sig_x*sig_y*xishu;  %计算原始数据的回归方程的常数项
+xish=xishu'./sig_x*sig_y;  %计算原始数据的回归方程的系数，每一列是一个回归方程
+Rc=corrcoef(x0*xish'+ch0,y0)
+sol=[ch0;xish']      %显示回归方程的系数，每一列是一个方程，每一列的第一个数是常数项
+多因变量
+function y=pls(pz,Xnum,Ynum)
+[row,col]=size(pz);
+aver=mean(pz);
+stdcov=std(pz); %求均值和标准差
+rr=corrcoef(pz);   %求相关系数矩阵
+data=zscore(pz); %数据标准化
+stdarr = ( pz - aver(ones(row,1),:) )./ stdcov( ones(row,1),:);  % 标准化自变量
+n=Xnum;m=Ynum;   %n 是自变量的个数,m是因变量的个数
+x0=pz(:,1:n);y0=pz(:,n+1:end); %提取原始的自变量、因变量数据
+e0=data(:,1:n);f0=data(:,n+1:end);  %提取标准化后的自变量、因变量数据
+num=size(e0,1);%求样本点的个数
+temp=eye(n);%对角阵
+for i=1:n
+%以下计算 w，w*和 t 的得分向量，
+    matrix=e0'*f0*f0'*e0;
+    [vec,val]=eig(matrix) %求特征值和特征向量
+    val=diag(val);   %提出对角线元素
+    [val,ind]=sort(val,'descend');
+    w(:,i)=vec(:,ind(1))  %提出最大特征值对应的特征向量
+    t(:,i)=e0*w(:,i)      %计算成分 ti 的得分
+    alpha(:,i)=e0'*t(:,i)/(t(:,i)'*t(:,i))  %计算 alpha_i ,其中(t(:,i)'*t(:,i))等价于norm(t(:,i))^2
+    e=e0-t(:,i)*alpha(:,i)'    %计算残差矩阵
+    e0=e;
+     %计算w*矩阵
+       if i==1
+           w_star(:,i)=w(:,i);
+       else
+          for j=1:i-1
+              temp=temp*(eye(n)-w(:,j)*alpha(:,j)');
+          end
+          w_star(:,i)=temp*w(:,i);
+      end     
+%以下计算 ss(i)的值
+    beta=[t(:,1:i),ones(num,1)]\f0  %求回归方程的系数
+    beta(end,:)=[];   %删除回归分析的常数项
+    cancha=f0-t(:,1:i)*beta;    %求残差矩阵
+    ss(i)=sum(sum(cancha.^2));  %求误差平方和
+%以下计算 press(i)
+    for j=1:num
+        t1=t(:,1:i);f1=f0;
+        she_t=t1(j,:);she_f=f1(j,:);  %把舍去的第 j个样本点保存起来
+        t1(j,:)=[];f1(j,:)=[];        %删除第j个观测值
+        beta1=[t1,ones(num-1,1)]\f1;  %求回归分析的系数
+        beta1(end,:)=[];           %删除回归分析的常数项
+        cancha=she_f-she_t*beta1;  %求残差向量
+        press_i(j)=sum(cancha.^2); 
+    end
+    press(i)=sum(press_i)
+    if i>1
+        Q_h2(i)=1-press(i)/ss(i-1)
+    else
+        Q_h2(1)=1
+    end
+    if Q_h2(i)<0.0985
+        fprintf('提出的成分个数 r=%d',i);
+        r=i;
+        break
+    end
+end
+beta_z=[t(:,1:r),ones(num,1)]\f0;   %求标准化Y关于 t 的回归系数
+beta_z(end,:)=[];      %删除常数项
+xishu=w_star(:,1:r)*beta_z;   %求标准化Y关于X的回归系数， 且是针对标准数据的回归系数，每一列是一个回归方程
+mu_x=aver(1:n);mu_y=aver(n+1:end);
+sig_x=stdcov(1:n);sig_y=stdcov(n+1:end);
+for i=1:m
+    ch0(i)=mu_y(i)-mu_x./sig_x*sig_y(i)*xishu(:,i);  %计算原始数据的回归方程的常数项
+end
+for i=1:m
+    xish(:,i)=xishu(:,i)./sig_x'*sig_y(i);  %计算原始数据的回归方程的系数， 每一列是一个回归方程
+end
+sol=[ch0;xish]      %显示回归方程的系数，每一列是一个方程，每一列的第一个数是常数项
+
+以下为朱逢乐为做鱼实验给的思路和算法：
+MNF去噪（此步可自选）
+1、定波段band 56-band 485
+2、选ROI，保存ROI和统计文件，每个样品2个ROI,问：ROI要按数字顺序吗？是不是不需要？
+3、做PCA分析：步骤为空间选ROI；选择波段band 56-band 485；勾选Yes可查看前几个pc的贡献率
+4、据贡献率保存前几个PC图，格式可为1.bmp或者1.tif，按数字顺序存，如一个样品取前三个pc图，8位图，30个样品则30*3=90张图
+5、根据提供程序进行提取纹理分析，3个图*12个变量/张图=36个变量
+程序如下：
+z=zeros(90,12); %90-代表PC图像数目，12-代表纹理特征数目
+for q=1:1:90;  
+A=imread([num2str(q),'.tif']);         %图形的格式
+glcm = graycomatrix(A); 
+stats = graycoprops(glcm,{'contrast','correlation','energy','homogeneity'}); 
+Cont=stats.Contrast;  %结构数组转换为矩阵,这里的Contrast,Correlation,Energy,Homogeneity字母开头要大写
+Corr=stats.Correlation;
+Ener=stats.Energy;
+Homo=stats.Homogeneity;
+p=glcm./sum(glcm(:));
+u=mean(mean(p));
+Variance=0;
+Entropy=0;
+for i=1:1:8;
+for j=1:1:8;
+   Variance=Variance+((i-u)^2*p(i,j)); 
+   if p(i,j)~=0;
+     Entropy=Entropy-p(i,j)*log(p(i,j));
+   end
+end
+end
+SA=0; 
+for k=2:1:2*8; 
+pxjiay(k)=0;
+    for i=1:1:8;
+        if (k-i)>0 & (k-i)<8; 
+          pxjiay(k)=pxjiay(k)+p(i,k-i); 
+        end 
+    end 
+SA=SA+k*pxjiay(k); 
+end 
+SV=0; 
+SE=0; 
+for k=2:1:2*8; 
+    SV=SV+((k-SA)^2*pxjiay(k)); 
+    if pxjiay(k)~=0; 
+        SE=SE-pxjiay(k)*log(pxjiay(k)); 
+    end 
+end 
+DA=0; 
+for g=0:1:8-1;
+pxjiany(g+1)=0;
+    for i=1:1:8;
+        if (g+i)<8; 
+            if g>0; 
+                pxjiany(g+1)=pxjiany(g+1)+p(i,g+i)+p(g+i,i); 
+            else 
+                pxjiany(g+1)=pxjiany(g+1)+p(i,g+i); 
+            end 
+        end 
+    end 
+DA=DA+g*pxjiany(g+1); 
+end 
+DV=0; 
+DE=0; 
+for g=0:1:8-1;
+    DV=DV+((g-DA)^2*pxjiany(g+1)); 
+    if pxjiany(g+1)~=0 
+        DE=DE-pxjiany(g+1)*log(pxjiany(g+1)); 
+    end 
+end 
+z(q,1)=Cont;
+z(q,2)=Corr;
+z(q,3)=Ener;
+z(q,4)=Homo;
+z(q,5)=Variance;
+z(q,6)=Entropy;
+z(q,7)=SA;
+z(q,8)=SV;
+z(q,9)=SE;
+z(q,10)=DA;
+z(q,11)=DV;
+z(q,12)=DE;
+end
+
+C=zeros(30,36);  %30是样本数，36是每个样本的纹理变量的个数，＝12个变量/每个PC图 * 3个PC图
+for m=1:1:30; 
+    C(m,:)=[z((3*(m-1)+1),:),z((3*(m-1)+2),:),z((3*m),:)];  %3是PC图的个数
+end
+6、归一化处理，公式：（X-Xmin)/(Xmax-Xmin)
+M(1,:)=max(X(:,:));
+N(1,:)=min(X(:,:));
+Y=M-N;
+for i=1:1:12;  %X矩阵有12列
+Z(:,i)=(X(:,i)-N(1,i))/Y(1,i);
+end
+技巧：
+Envi---->File/Preferencees:miscellaneons--->Cache Size:500,Image File Size:10;
+7、IDL编程先配好JAVA开发环境。
+以下为程序：
+pro ave_spectra_zjuz
+
+ envi, /restore_base_save_files 
+ envi_batch_init             
+
+  
+  fileBase = 'd:\zju\20a1bj.raw'  ;文件路径，根据实际情况修改
+  dirname = file_dirname(fileBase)
+  
+  
+  ROIBase = 'd:\zju\ROI\1.roi'    ;ROI路径，根据实际情况修改
+  ROIdirname = file_dirname(ROIBase)
+  
+ 
+  for p=0,1 do begin ;这里有2个大文件raw，是p=0,1..14。有n个文件，是p=0,n-1。根据实际情况修改，p=0,找到第一个大文件，p=1,找到第二个大文件raw,以此类推。
+    fileout = dirname + '\20a'+ strtrim((p+1),2) +'bj.raw';文件名称，根据实际情况修改，把'1'提取到
+    roiout1 = ROIdirname +'\'+ strtrim(((p+1)*2-1),2) +'.roi';同时，(p+1)*2-1)找到第一个roi文件，(p+1)*2)找到第二个roi文件,以此类推
+    roiout2 = ROIdirname +'\'+ strtrim(((p+1)*2),2) +'.roi' 
+  
+    envi_open_file, fileout, r_fid=fid 
+      
+
+      envi_restore_rois, roiout1 
+      roi_ids = envi_get_roi_ids() 
+      if (roi_ids[0] eq -1) then return 
+      
+    
+    
+      arr = Indgen(512)         ;这个程序中出现的512都是指波段数，如果波段数改成n，全部的512都要改成n
+      data = envi_get_roi_data(roi_ids[0], fid=fid, pos=arr) 
+      print ,roiout1, size(data)
+      
+  
+      
+      n = N_elements(data)/512  ;像素点数
+      m = n/10
+      
+      
+     result = Fltarr(512)       
+            
+      for k = 0,511 do begin  
+      
+      temptemp = Fltarr(10)
+       
+          for i=0 ,9 do begin 
+      
+          temp = 0.0
+      
+                for j = m*i,m*(i+1)-1 do begin    
+        
+                temp = temp + data(k,j)
+          
+                endfor
+        
+          temptemp(i) = temp/m
+         
+           endfor
+        
+       result(k) = (mean(temptemp))/4095.0      
+             
+       endfor
+        
+      dlmwrite,'d:\result.txt',result        ;写入txt文档
+      
+      envi_delete_rois, roi_ids             ;移除ROI，否则IDL会一直只执行第一个ROI
+   
+   
+   
+
+      envi_restore_rois, roiout2 
+      roi_ids = envi_get_roi_ids() 
+      if (roi_ids[0] eq -1) then return 
+      
+    
+    
+      arr = Indgen(512) 
+      data = envi_get_roi_data(roi_ids[0], fid=fid, pos=arr) 
+      print ,roiout2, size(data)
+      
+  
+      
+      n = N_elements(data)/512  ;像素点数
+      m = n/10
+        
+      
+      result = Fltarr(512)     
+        
+            
+      for k = 0,511 do begin  
+      
+      temptemp = Fltarr(10)
+       
+          for i=0 ,9 do begin 
+      
+          temp = 0.0
+      
+                for j = m*i,m*(i+1)-1 do begin    
+        
+                temp = temp + data(k,j)
+          
+                endfor
+        
+          temptemp(i) = temp/m
+         
+           endfor
+        
+       result(k) = (mean(temptemp))/4095.0      
+             
+       endfor
+        
+      dlmwrite,'d:\result.txt',result        ;写入txt文档
+   
+        
+      envi_file_mng,id= fid,/remove             ;移除文件，否则IDL会一直只执行第一个文件
+      envi_delete_rois, roi_ids                 ;移除ROI，否则IDL会一直只执行第一个ROI
+        
+  
+  endfor 
+  
+  
+
+  
+    envi_batch_exit 
+end
+
+8.读txt文件程序
+PRO dlmwrite,FileName,DoubleArray,HeadStr=HeadStr  
+;================================================  
+;IDL中将1维或2维数组写入文件,模仿matlab的命令格式  
+;用法IDL>dlmwrite,FileName,DoubleArray  
+;用法IDL>dlmwrite,FileName,HeadStr=StrArray  
+;DoubleArray可以是1维或2维数组  
+;HeadStr是1维字符串数组,每个元素的长度不能大于12个字符  
+;================================================  
+;Rumswell(USTC & AIAI)  
+;Email:rumswell@qq.com  
+;2011-03-29  
+;================================================  
+SDA=Size(DoubleArray)  
+;-----------------------------------------  
+if (SDA[0] eq 1) then begin  
+    Row=SDA[1]  
+    OPENW , /APPEND, Unit,FileName,/GET_LUN  
+    IF KEYWORD_SET(HeadStr) AND (size(HeadStr,/type) EQ 7) THEN BEGIN   
+        PRINTF,Unit,HeadStr  
+    ENDIF  
+    FOR i=0,Row-1 DO BEGIN  
+        PRINTF,Unit,DoubleArray[i]  
+    ENDFOR  
+    FREE_LUN, Unit  
+endif  
+;-----------------------------------------  
+if (SDA[0] eq 2) then begin  
+    Column=SDA[1]  
+    Row=SDA[2]  
+    LineWidth=Column*20  
+    OPENW, /APPEND, Unit,FileName,WIDTH=LineWidth,/GET_LUN  
+    IF KEYWORD_SET(HeadStr) AND (size(HeadStr,/type) EQ 7) THEN BEGIN   
+        PRINTF,Unit,HeadStr,format='(99A13)'  
+    ENDIF  
+    FOR i=0,Row-1 DO BEGIN  
+        PRINTF,Unit,DoubleArray[*,i]  
+    ENDFOR  
+    FREE_LUN, Unit  
+endif  
+;-----------------------------------------  
+end 
+
+9.利用LS－SVM算法进行分类
+load data;
+X=data;
+X=X';
+P=X(1:512,[1:25,31:55,61:85,91:115,121:145,151:175]);  %建模集输入光谱
+P1=X(1:512,[26:30,56:60,86:90,116:120,146:150,176:180]);  %预测集输入光谱
+n1=P;
+x1 = [1*ones(1,25),2*ones(1,25),3*ones(1,25),4*ones(1,25),5*ones(1,25),6*ones(1,25)];   %建模集输出类别  % 特别注意：这里的目标与神经网络不同
+n2 = P1;
+x2 = [1*ones(1,5),2*ones(1,5),3*ones(1,5),4*ones(1,5),5*ones(1,5),6*ones(1,5)];   %预测集输出类别
+xn_train = n1;          % 训练样本
+dn_train = x1;          % 训练目标
+
+xn_test = n2;           % 测试样本
+dn_test = x2;           % 测试目标
+
+%---------------------------------------------------
+% 参数设置
+
+X = xn_train';
+Y = dn_train';
+Xt = xn_test';
+Yt = dn_test';
+
+type = 'c';
+kernel_type = 'RBF_kernel';
+gam=1;   %初始赋值
+sig2=1;  %初始赋值
+%U=zeros(10,10);
+%for i=1:10;
+    %gam=i;
+    %for j=1:10;
+        %sig2=j;
+    
+preprocess = 'preprocess';
+codefct = 'code_MOC';           
+
+% 将“多类”转换成“两类”的编码方案
+% 1. Minimum Output Coding (code_MOC) 
+% 2. Error Correcting Output Code (code_ECOC)
+% 3. One versus All Coding (code_OneVsAll)
+% 4. One Versus One Coding (code_OneVsOne) 
+
+%---------------------------------------------------
+% 编码
+
+[Yc,codebook,old_codebook] = code(Y,codefct);
+
+%---------------------------------------------------
+% 交叉验证优化参数
+
+[gam,sig2] = tunelssvm({X,Yc,type,gam,sig2,kernel_type,preprocess})
+
+%---------------------------------------------------
+% 训练与测试
+
+[alpha,b] = trainlssvm({X,Yc,type,gam,sig2,kernel_type,preprocess});           % 训练
+Yd0 = simlssvm({X,Yc,type,gam,sig2,kernel_type,preprocess},{alpha,b},Xt);      % 分类
+
+%---------------------------------------------------
+% 解码
+
+Yd = code(Yd0,old_codebook,[],codebook);
+
+%---------------------------------------------------
+% 结果统计
+
+Result = ~abs(Yd-Yt);               % 正确分类显示为1
+Pe= sum(Result)/length(Result);   % 正确分类率
+ %U(i,j)=Pe;
+   % end
+%end
+10.利用小波提取图像信息，李晓丽给程序
+Z=zeros(2,21);
+for k=1:2;   
+    A=imread([num2str(k),'.tif']);  
+%取IR通道图像处理
+    K=A(:,:,2);
+    K=double(K)+1;
+[c,s]=wavedec2(K,2,'db1');
+sizex=size(K);
+sizec=size(c);
+val_s=s;
+[ca2]=appcoef2(c,s,'db1',2);
+%提取一尺度分解特征
+[chd1,cvd1,cdd1]=detcoef2('all',c,s,1);
+sizecd1=size(chd1);
+
+%T=zeros(401,401);
+
+for i=1:201;
+    for j=1:201;
+    r=chd1(i,j);
+    Q=chd1;
+ a1=sum(Q');
+        b1=a1*i;
+        Ui=sum(b1,2);
+        a2=sum(Q);
+        b2=a2*j;
+        Vj=sum(b2,2);
+          z=(i-Ui)*(j-Vj)*a1;
+        Wi=sqrt(sum(z,2));
+          z=(i-Ui)*(j-Vj)*a2;
+        Xj=sqrt(sum(z,2));
+       r=chd1(i,j);
+       Y(i,j)=((i-Ui)*(j-Vj)*r)/(Wi*Xj);
+    end
+end
+
+ a=sum(Y);
+   x1=sum(a');
+
+ 
+ C=cvd1;
+for i=1:201;
+    for j=1:201;
+    r=cvd1(i,j);
+    Q=cvd1;
+ a1=sum(Q');
+        b1=a1*i;
+        Ui=sum(b1,2);
+        
+        a2=sum(Q);
+        b2=a2*j;
+        Vj=sum(b2,2);
+          z=(i-Ui)*(j-Vj)*a1;
+        Wi=sqrt(sum(z,2));
+          z=(i-Ui)*(j-Vj)*a2;
+        Xj=sqrt(sum(z,2));
+       r=chd1(i,j);
+       Y(i,j)=((i-Ui)*(j-Vj)*r)/(Wi*Xj);
+    end
+end
+
+ a=sum(Y);
+ x2=sum(a');
+ 
+
+for i=1:201;
+    for j=1:201;
+ r=cdd1(i,j);
+ Q=cdd1;
+ a1=sum(Q');
+        b1=a1*i;
+        Ui=sum(b1,2);
+        
+        a2=sum(Q);
+        b2=a2*j;
+        Vj=sum(b2,2);
+          z=(i-Ui)*(j-Vj)*a1;
+        Wi=sqrt(sum(z,2));
+          z=(i-Ui)*(j-Vj)*a2;
+        Xj=sqrt(sum(z,2));
+       r=chd1(i,j);
+       Y(i,j)=((i-Ui)*(j-Vj)*r)/(Wi*Xj);
+    end
+end
+
+ a=sum(Y);
+   x3=sum(a');
+
+
+for i=1:101;
+    for j=1:101;
+ r=ca2(i,j);
+ Q=ca2;
+ a1=sum(Q');
+        b1=a1*i;
+        Ui=sum(b1,2);
+        
+        a2=sum(Q);
+        b2=a2*j;
+        Vj=sum(b2,2);
+          z=(i-Ui)*(j-Vj)*a1;
+        Wi=sqrt(sum(z,2));
+          z=(i-Ui)*(j-Vj)*a2;
+        Xj=sqrt(sum(z,2));
+       r=chd1(i,j);
+       Y(i,j)=((i-Ui)*(j-Vj)*r)/(Wi*Xj);
+    end
+end
+ 
+ a=sum(Y);
+ x4=sum(a');
+ 
+ %提取二尺度分解高频特征
+[chd2,cvd2,cdd2]=detcoef2('all',c,s,2);
+sizecd2=size(chd2);
+for i=1:101;
+    for j=1:101;
+ r=chd2(i,j);
+ Q=chd2;
+ a1=sum(Q');
+        b1=a1*i;
+        Ui=sum(b1,2);
+        
+        a2=sum(Q);
+        b2=a2*j;
+        Vj=sum(b2,2);
+          z=(i-Ui)*(j-Vj)*a1;
+        Wi=sqrt(sum(z,2));
+          z=(i-Ui)*(j-Vj)*a2;
+        Xj=sqrt(sum(z,2));
+       r=chd1(i,j);
+       Y(i,j)=((i-Ui)*(j-Vj)*r)/(Wi*Xj);
+    end
+end
+
+ a=sum(Y);
+ x5=sum(a');
+ 
+
+for i=1:101;
+    for j=1:101;
+ r=cvd2(i,j);
+ Q=cvd2;
+ a1=sum(Q');
+        b1=a1*i;
+        Ui=sum(b1,2);
+        
+        a2=sum(Q);
+        b2=a2*j;
+        Vj=sum(b2,2);
+          z=(i-Ui)*(j-Vj)*a1;
+        Wi=sqrt(sum(z,2));
+          z=(i-Ui)*(j-Vj)*a2;
+        Xj=sqrt(sum(z,2));
+       r=chd1(i,j);
+       Y(i,j)=((i-Ui)*(j-Vj)*r)/(Wi*Xj);
+    end
+end
+
+ a=sum(Y);
+ x6=sum(a');
+ 
+
+for i=1:101;
+    for j=1:101;
+ r=cdd2(i,j);
+ Q=cdd2;
+ a1=sum(Q');
+        b1=a1*i;
+        Ui=sum(b1,2);
+        
+        a2=sum(Q);
+        b2=a2*j;
+        Vj=sum(b2,2);
+          z=(i-Ui)*(j-Vj)*a1;
+        Wi=sqrt(sum(z,2));
+          z=(i-Ui)*(j-Vj)*a2;
+        Xj=sqrt(sum(z,2));
+       r=chd1(i,j);
+       Y(i,j)=((i-Ui)*(j-Vj)*r)/(Wi*Xj);
+    end
+end
+
+ a=sum(Y);
+ x7=sum(a');
+ 
+ %取Red通道图像处理
+    K=A(:,:,1);
+    K=double(K)+1;
+[c,s]=wavedec2(K,2,'db1');
+sizex=size(K);
+sizec=size(c);
+val_s=s;
+[ca2]=appcoef2(c,s,'db1',2);
+%提取一尺度分解特征
+[chd1,cvd1,cdd1]=detcoef2('all',c,s,1);
+sizecd1=size(chd1);
+
+%T=zeros(401,401);
+
+for i=1:201;
+    for j=1:201;
+r=chd1(i,j);
+ Q=chd1;
+ a1=sum(Q');
+        b1=a1*i;
+        Ui=sum(b1,2);
+        
+        a2=sum(Q);
+        b2=a2*j;
+        Vj=sum(b2,2);
+          z=(i-Ui)*(j-Vj)*a1;
+        Wi=sqrt(sum(z,2));
+          z=(i-Ui)*(j-Vj)*a2;
+        Xj=sqrt(sum(z,2));
+       r=chd1(i,j);
+       Y(i,j)=((i-Ui)*(j-Vj)*r)/(Wi*Xj);
+    end
+end
+
+ a=sum(Y);
+ x8=sum(a');
+ 
+
+for i=1:201;
+    for j=1:201;
+ r=cvd1(i,j);
+ Q=cvd1;
+ a1=sum(Q');
+        b1=a1*i;
+        Ui=sum(b1,2);
+        
+        a2=sum(Q);
+        b2=a2*j;
+        Vj=sum(b2,2);
+          z=(i-Ui)*(j-Vj)*a1;
+        Wi=sqrt(sum(z,2));
+          z=(i-Ui)*(j-Vj)*a2;
+        Xj=sqrt(sum(z,2));
+       r=chd1(i,j);
+       Y(i,j)=((i-Ui)*(j-Vj)*r)/(Wi*Xj);
+    end
+end
+
+ a=sum(Y);
+ x9=sum(a');
+ 
+ 
+for i=1:201;
+    for j=1:201;
+r=cdd1(i,j);
+ Q=cdd1;
+ a1=sum(Q');
+        b1=a1*i;
+        Ui=sum(b1,2);
+        
+        a2=sum(Q);
+        b2=a2*j;
+        Vj=sum(b2,2);
+          z=(i-Ui)*(j-Vj)*a1;
+        Wi=sqrt(sum(z,2));
+          z=(i-Ui)*(j-Vj)*a2;
+        Xj=sqrt(sum(z,2));
+       r=chd1(i,j);
+       Y(i,j)=((i-Ui)*(j-Vj)*r)/(Wi*Xj);
+    end
+end
+
+ a=sum(Y);
+ x10=sum(a');
+ 
+ 
+for i=1:101;
+    for j=1:101;
+ r=ca2(i,j);
+ Q=ca2;
+ a1=sum(Q');
+        b1=a1*i;
+        Ui=sum(b1,2);
+        
+        a2=sum(Q);
+        b2=a2*j;
+        Vj=sum(b2,2);
+          z=(i-Ui)*(j-Vj)*a1;
+        Wi=sqrt(sum(z,2));
+          z=(i-Ui)*(j-Vj)*a2;
+        Xj=sqrt(sum(z,2));
+       r=chd1(i,j);
+       Y(i,j)=((i-Ui)*(j-Vj)*r)/(Wi*Xj);
+    end
+end
+ 
+ a=sum(Y);
+ x11=sum(a');
+ 
+ %提取二尺度分解高频特征
+[chd2,cvd2,cdd2]=detcoef2('all',c,s,2);
+sizecd2=size(chd2);
+
+for i=1:101;
+    for j=1:101;
+ r=chd2(i,j);
+ Q=chd2
+a1=sum(Q');
+        b1=a1*i;
+        Ui=sum(b1,2);
+        
+        a2=sum(Q);
+        b2=a2*j;
+        Vj=sum(b2,2);
+          z=(i-Ui)*(j-Vj)*a1;
+        Wi=sqrt(sum(z,2));
+          z=(i-Ui)*(j-Vj)*a2;
+        Xj=sqrt(sum(z,2));
+       r=chd1(i,j);
+       Y(i,j)=((i-Ui)*(j-Vj)*r)/(Wi*Xj);
+    end
+end
+
+ a=sum(Y);
+ x12=sum(a');
+ 
+
+for i=1:201;
+    for j=1:201;
+ r=cvd1(i,j);
+ Q=cvd1;
+ a1=sum(Q');
+        b1=a1*i;
+        Ui=sum(b1,2);
+        
+        a2=sum(Q);
+        b2=a2*j;
+        Vj=sum(b2,2);
+          z=(i-Ui)*(j-Vj)*a1;
+        Wi=sqrt(sum(z,2));
+          z=(i-Ui)*(j-Vj)*a2;
+        Xj=sqrt(sum(z,2));
+       r=chd1(i,j);
+       Y(i,j)=((i-Ui)*(j-Vj)*r)/(Wi*Xj);
+    end
+end
+
+ a=sum(Y);
+
+ x13=sum(a');
+ 
+
+for i=1:201;
+    for j=1:201;
+ r=cdd1(i,j);
+ Q=cdd1;
+ a1=sum(Q');
+        b1=a1*i;
+        Ui=sum(b1,2);
+        
+        a2=sum(Q);
+        b2=a2*j;
+        Vj=sum(b2,2);
+          z=(i-Ui)*(j-Vj)*a1;
+        Wi=sqrt(sum(z,2));
+          z=(i-Ui)*(j-Vj)*a2;
+        Xj=sqrt(sum(z,2));
+       r=chd1(i,j);
+       Y(i,j)=((i-Ui)*(j-Vj)*r)/(Wi*Xj);
+    end
+end
+
+ a=sum(Y);
+ 
+ x14=sum(a');
+ 
+ %取green通道图像处理
+    K=A(:,:,3);
+    K=double(K)+1;
+[c,s]=wavedec2(K,2,'db1');
+sizex=size(K);
+sizec=size(c);
+val_s=s;
+[ca2]=appcoef2(c,s,'db1',2);
+%提取一尺度分解特征
+[chd1,cvd1,cdd1]=detcoef2('all',c,s,1);
+sizecd1=size(chd1);
+
+%T=zeros(401,401);
+
+for i=1:201;
+    for j=1:201;
+ r=chd1(i,j);
+ Q=chd1;
+a1=sum(Q');
+        b1=a1*i;
+        Ui=sum(b1,2);
+        
+        a2=sum(Q);
+        b2=a2*j;
+        Vj=sum(b2,2);
+          z=(i-Ui)*(j-Vj)*a1;
+        Wi=sqrt(sum(z,2));
+          z=(i-Ui)*(j-Vj)*a2;
+        Xj=sqrt(sum(z,2));
+       r=chd1(i,j);
+       Y(i,j)=((i-Ui)*(j-Vj)*r)/(Wi*Xj);
+    end
+end
+ 
+ a=sum(Y);
+ 
+ x15=sum(a');
+ 
+
+for i=1:201;
+    for j=1:201;
+ r=cvd1(i,j);
+ Q=cvd1;
+ a1=sum(Q');
+        b1=a1*i;
+        Ui=sum(b1,2);
+        
+        a2=sum(Q);
+        b2=a2*j;
+        Vj=sum(b2,2);
+          z=(i-Ui)*(j-Vj)*a1;
+        Wi=sqrt(sum(z,2));
+          z=(i-Ui)*(j-Vj)*a2;
+        Xj=sqrt(sum(z,2));
+       r=chd1(i,j);
+       Y(i,j)=((i-Ui)*(j-Vj)*r)/(Wi*Xj);
+    end
+end
+
+ a=sum(Y);
+ 
+ x16=sum(a');
+ 
+
+for i=1:201;
+    for j=1:201;
+ r=cdd1(i,j);
+ Q=cdd1;
+ a1=sum(Q');
+        b1=a1*i;
+        Ui=sum(b1,2);
+        
+        a2=sum(Q);
+        b2=a2*j;
+        Vj=sum(b2,2);
+          z=(i-Ui)*(j-Vj)*a1;
+        Wi=sqrt(sum(z,2));
+          z=(i-Ui)*(j-Vj)*a2;
+        Xj=sqrt(sum(z,2));
+       r=chd1(i,j);
+       Y(i,j)=((i-Ui)*(j-Vj)*r)/(Wi*Xj);
+    end
+end
+
+ a=sum(Y);
+ 
+ x17=sum(a');
+ 
+ 
+for i=1:101;
+    for j=1:101;
+ r=ca2(i,j);
+ Q=ca2;
+ a1=sum(Q');
+        b1=a1*i;
+        Ui=sum(b1,2);
+        
+        a2=sum(Q);
+        b2=a2*j;
+        Vj=sum(b2,2);
+          z=(i-Ui)*(j-Vj)*a1;
+        Wi=sqrt(sum(z,2));
+          z=(i-Ui)*(j-Vj)*a2;
+        Xj=sqrt(sum(z,2));
+       r=chd1(i,j);
+       Y(i,j)=((i-Ui)*(j-Vj)*r)/(Wi*Xj);
+    end
+end
+
+ a=sum(Y);
+
+ x18=sum(a');
+ 
+ %提取二尺度分解高频特征
+[chd2,cvd2,cdd2]=detcoef2('all',c,s,2);
+sizecd2=size(chd2);
+
+for i=1:101;
+    for j=1:101;
+ r=chd2(i,j);
+ Q=chd2;
+ a1=sum(Q');
+        b1=a1*i;
+        Ui=sum(b1,2);
+        
+        a2=sum(Q);
+        b2=a2*j;
+        Vj=sum(b2,2);
+          z=(i-Ui)*(j-Vj)*a1;
+        Wi=sqrt(sum(z,2));
+          z=(i-Ui)*(j-Vj)*a2;
+        Xj=sqrt(sum(z,2));
+       r=chd1(i,j);
+       Y(i,j)=((i-Ui)*(j-Vj)*r)/(Wi*Xj);
+    end
+end
+
+ a=sum(Y);
+
+ x19=sum(a');
+ 
+
+for i=1:101;
+    for j=1:101;
+ Q=cvd2;
+ r=cvd2(i,j);
+ a1=sum(Q');
+        b1=a1*i;
+        Ui=sum(b1,2);
+        
+        a2=sum(Q);
+        b2=a2*j;
+        Vj=sum(b2,2);
+          z=(i-Ui)*(j-Vj)*a1;
+        Wi=sqrt(sum(a,2));
+          z=(i-Ui)*(j-Vj)*a2;
+        Xj=sqrt(sum(z,2));
+       r=chd1(i,j);
+       Y(i,j)=((i-Ui)*(j-Vj)*r)/(Wi*Xj);
+    end
+end
+
+ a=sum(Y);
+ 
+ x20=sum(a');
+ 
+
+for i=1:101;
+    for j=1:101;
+        Q=cdd2;
+ r=cdd2(i,j);
+ a1=sum(Q');
+        b1=a1*i;
+        Ui=sum(b1,2);      
+        a2=sum(Q);
+        b2=a2*j;
+        Vj=sum(b2,2);
+          o=(i-Ui)*(j-Vj)*a1;
+        Wi=sqrt(sum(o,2));
+          o=(i-Ui)*(j-Vj)*a2;
+        Xj=sqrt(sum(o,2));
+       Y(i,j)=((i-Ui)*(j-Vj)*r)/(Wi*Xj);
+    end
+end
+ a=sum(Y);
+ x21=sum(a');
+  Z(k,:)=[x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12,x13,x14,x15,x16,x17,x18,x19,x20,x21];
+end
+11.提取灰度共生矩阵
+z=zeros(9,12); %90-代表PC图像数目，12-代表纹理特征数目
+for q=1:1:9;  
+A=imread([num2str(q),'.tif']);         %图形的格式
+glcm = graycomatrix(A); 
+stats = graycoprops(glcm,{'contrast','correlation','energy','homogeneity'}); 
+Cont=stats.Contrast;  %结构数组转换为矩阵,这里的Contrast,Correlation,Energy,Homogeneity字母开头要大写
+Corr=stats.Correlation;
+Ener=stats.Energy;
+Homo=stats.Homogeneity;
+p=glcm./sum(glcm(:));
+u=mean(mean(p));
+Variance=0;
+Entropy=0;
+for i=1:1:8;
+for j=1:1:8;
+   Variance=Variance+((i-u)^2*p(i,j)); 
+   if p(i,j)~=0;
+     Entropy=Entropy-p(i,j)*log(p(i,j));
+   end
+end
+end
+SA=0; 
+for k=2:1:2*8; 
+pxjiay(k)=0;
+    for i=1:1:8;
+        if (k-i)>0 & (k-i)<8; 
+          pxjiay(k)=pxjiay(k)+p(i,k-i); 
+        end 
+    end 
+SA=SA+k*pxjiay(k); 
+end 
+SV=0; 
+SE=0; 
+for k=2:1:2*8; 
+    SV=SV+((k-SA)^2*pxjiay(k)); 
+    if pxjiay(k)~=0; 
+        SE=SE-pxjiay(k)*log(pxjiay(k)); 
+    end 
+end 
+DA=0; 
+for g=0:1:8-1;
+pxjiany(g+1)=0;
+    for i=1:1:8;
+        if (g+i)<8; 
+            if g>0; 
+                pxjiany(g+1)=pxjiany(g+1)+p(i,g+i)+p(g+i,i); 
+            else 
+                pxjiany(g+1)=pxjiany(g+1)+p(i,g+i); 
+            end 
+        end 
+    end 
+DA=DA+g*pxjiany(g+1); 
+end 
+DV=0; 
+DE=0; 
+for g=0:1:8-1;
+    DV=DV+((g-DA)^2*pxjiany(g+1)); 
+    if pxjiany(g+1)~=0 
+        DE=DE-pxjiany(g+1)*log(pxjiany(g+1)); 
+    end 
+end 
+z(q,1)=Cont;
+z(q,2)=Corr;
+z(q,3)=Ener;
+z(q,4)=Homo;
+z(q,5)=Variance;
+z(q,6)=Entropy;
+z(q,7)=SA;
+z(q,8)=SV;
+z(q,9)=SE;
+z(q,10)=DA;
+z(q,11)=DV;
+z(q,12)=DE;
+end
+
+C=zeros(3,36);  %30是样本数，36是每个样本的纹理变量的个数，＝12个变量/每个PC图 * 3个PC图
+for m=1:1:3; 
+    C(m,:)=[z((3*(m-1)+1),:),z((3*(m-1)+2),:),z((3*m),:)];  %3是PC图的个数
+end
+重要的程序：
+ＬＳ－ＳＶＭ用于分类：
+load data1;
+X=data;
+X=X';
+P=X(1:36,[1:25,31:55,61:85,91:115,121:145,151:175]);  %建模集输入光谱
+P1=X(1:36,[26:30,56:60,86:90,116:120,146:150,176:180]);  %预测集输入光谱
+n1=P;
+x1 = [1*ones(1,25),2*ones(1,25),3*ones(1,25),4*ones(1,25),5*ones(1,25),6*ones(1,25)];   %建模集输出类别  % 特别注意：这里的目标与神经网络不同
+n2 = P1;
+x2 = [1*ones(1,5),2*ones(1,5),3*ones(1,5),4*ones(1,5),5*ones(1,5),6*ones(1,5)];   %预测集输出类别
+xn_train = n1;          % 训练样本
+dn_train = x1;          % 训练目标
+
+xn_test = n2;           % 测试样本
+dn_test = x2;           % 测试目标
+
+%---------------------------------------------------
+% 参数设置
+
+X = xn_train';
+Y = dn_train';
+Xt = xn_test';
+Yt = dn_test';
+
+type = 'c';
+kernel_type = 'RBF_kernel';
+gam=1;   %初始赋值
+sig2=1;  %初始赋值
+%U=zeros(10,10);
+%for i=1:10;
+    %gam=i;
+    %for j=1:10;
+        %sig2=j;
+    
+preprocess = 'preprocess';
+codefct = 'code_MOC';           
+
+% 将“多类”转换成“两类”的编码方案
+% 1. Minimum Output Coding (code_MOC) 
+% 2. Error Correcting Output Code (code_ECOC)
+% 3. One versus All Coding (code_OneVsAll)
+% 4. One Versus One Coding (code_OneVsOne) 
+
+%---------------------------------------------------
+% 编码
+
+[Yc,codebook,old_codebook] = code(Y,codefct);
+
+%---------------------------------------------------
+% 交叉验证优化参数
+
+[gam,sig2] = tunelssvm({X,Yc,type,gam,sig2,kernel_type,preprocess})
+
+%---------------------------------------------------
+% 训练与测试
+
+[alpha,b] = trainlssvm({X,Yc,type,gam,sig2,kernel_type,preprocess});           % 训练
+Yd0 = simlssvm({X,Yc,type,gam,sig2,kernel_type,preprocess},{alpha,b},Xt);      % 分类
+[area, se, deltab, oneMinusSpec, sens, TN, TP, FN, FP] = roc({X,Yc,type,gam,sig2,kernel_type}, figure)
+%---------------------------------------------------
+% 解码
+
+Yd = code(Yd0,old_codebook,[],codebook);
+
+%---------------------------------------------------
+% 结果统计
+
+Result = ~abs(Yd-Yt);               % 正确分类显示为1
+Pe= sum(Result)/length(Result);   % 正确分类率
+ %U(i,j)=Pe;
+   % end
+%end
+
+
+for i=1:394;
+[c,l]=wavedec(data(i,:),5,'db5'); 
+ca(i,:)=appcoef(c,l,'db5',5);
+a0(i,:)=waverec(c,l,'db5');
+error(i,:)=norm(data(i,:)-a0(i,:));
+end;
+subplot(2,2,1);plot(data'); title('原始信号');
+subplot(2,2,2);plot(ca'); title('低频信号');
+subplot(2,2,3);plot(a0'); title('重构信号');
+subplot(2,2,4);plot(error); title('误差信号');
+
+说明：data数据为光谱数据，不包括理化值。如394*1212,394为样品个数，1212为变量。
+
+小波工具箱使用方法：
+将数据文件（.Mat格式）导入到matlab软件主界面的workspac，进入wavemenu界面，选择一维小波中的Multisignal Analysis 1-D或者wavelet1-D并
+进入,在主界面中选择file-load?signal或者import?from?workspace—import?signal
+，右上角选择用于小波分析的小波基以及分解层数并点击decompose或者analyse开始分析,然后点击denoise
+去噪   阈值方法常用的有4种fixed（固定阈
+值），rigorsure，heusure，minmax根据需要选择，一
+般情况下rigorsure方式去噪效果较好，
+Soft（软阈值），hard（硬阈值）一般选择软阈值去噪后的信号较为平滑，在噪声结构中选择unscaled white noise，因为在工程应用中的噪声一般不仅仅含有白噪声，在噪声结构下面的数值不要随意改，这是系统默认的去
+噪幅度，点击denoise开始
+正式去噪，在此窗口下点击file-save?denoised?singal，保存输出去噪后的信号，去噪结束。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
